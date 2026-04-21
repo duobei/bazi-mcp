@@ -1,4 +1,4 @@
-import { calculateRelation, getShen } from 'cantian-tymext';
+import { calculateRelation, getShen, getWuxingRelation } from 'cantian-tymext';
 import {
   ChildLimit,
   DefaultEightCharProvider,
@@ -8,8 +8,17 @@ import {
   LunarHour,
   LunarSect2EightCharProvider,
   SixtyCycle,
+  SixtyCycleYear,
   SolarTime,
 } from 'tyme4ts';
+
+// 桃花位查找表（以日支查）
+const TAOHUA_MAP: Record<string, string> = {
+  申: '酉', 子: '酉', 辰: '酉',
+  寅: '卯', 午: '卯', 戌: '卯',
+  巳: '午', 酉: '午', 丑: '午',
+  亥: '子', 卯: '子', 未: '子',
+};
 
 const eightCharProvider1 = new DefaultEightCharProvider();
 const eightCharProvider2 = new LunarSect2EightCharProvider();
@@ -100,8 +109,59 @@ const buildDecadeFortuneObject = (solarTime: SolarTime, gender: Gender, me: Heav
   };
 };
 
-export const buildBazi = (options: { lunarHour: LunarHour; eightCharProviderSect?: 1 | 2; gender?: Gender }) => {
-  const { lunarHour, eightCharProviderSect = 2, gender = 1 } = options;
+const buildFlowYearObject = (year: number, me: HeavenStem) => {
+  const sixtyCycleYear = SixtyCycleYear.fromYear(year);
+  const sixtyCycle = sixtyCycleYear.getSixtyCycle();
+  const heavenStem = sixtyCycle.getHeavenStem();
+  const earthBranch = sixtyCycle.getEarthBranch();
+  return {
+    年份: year,
+    干支: sixtyCycle.toString(),
+    天干: heavenStem.toString(),
+    地支: earthBranch.toString(),
+    天干十神: me.getTenStar(heavenStem).getName(),
+    地支藏干: earthBranch.getHideHeavenStems().map((hs) => ({
+      天干: hs.getHeavenStem().toString(),
+      十神: me.getTenStar(hs.getHeavenStem()).getName(),
+    })),
+  };
+};
+
+const buildTaoHuaObject = (eightChar: EightChar, flowYearBranch: string) => {
+  const dayBranch = eightChar.getDay().getEarthBranch().toString();
+  const taohuaPos = TAOHUA_MAP[dayBranch];
+  const branches: Record<string, string> = {
+    年支: eightChar.getYear().getEarthBranch().toString(),
+    月支: eightChar.getMonth().getEarthBranch().toString(),
+    时支: eightChar.getHour().getEarthBranch().toString(),
+    流年支: flowYearBranch,
+  };
+  const found = Object.entries(branches)
+    .filter(([_, b]) => b === taohuaPos)
+    .map(([name]) => name);
+  return {
+    桃花位: taohuaPos,
+    依据: `日支${dayBranch}→桃花在${taohuaPos}`,
+    命中: found.length > 0 ? found.join('、') : `无（四柱及流年无${taohuaPos}）`,
+  };
+};
+
+const buildDayMasterWuxingRelation = (me: HeavenStem) => {
+  const meElement = me.getElement().toString();
+  const result: Record<string, string> = { 日主: `${me}${meElement}` };
+  for (const el of ['金', '木', '水', '火', '土']) {
+    if (el === meElement) continue;
+    const rel = getWuxingRelation(meElement, el);
+    if (rel === '生') result['我生'] = el;
+    else if (rel === '被生') result['生我'] = el;
+    else if (rel === '克') result['我克'] = el;
+    else if (rel === '被克') result['克我'] = el;
+  }
+  return result;
+};
+
+export const buildBazi = (options: { lunarHour: LunarHour; eightCharProviderSect?: 1 | 2; gender?: Gender; flowYear?: number }) => {
+  const { lunarHour, eightCharProviderSect = 2, gender = 1, flowYear } = options;
   if (eightCharProviderSect === 2) {
     LunarHour.provider = eightCharProvider2;
   } else {
@@ -109,6 +169,21 @@ export const buildBazi = (options: { lunarHour: LunarHour; eightCharProviderSect
   }
   const eightChar = lunarHour.getEightChar();
   const me = eightChar.getDay().getHeavenStem();
+
+  const zhuData: Record<string, { 天干: string; 地支: string }> = {
+    年: { 天干: eightChar.getYear().getHeavenStem().toString(), 地支: eightChar.getYear().getEarthBranch().toString() },
+    月: { 天干: eightChar.getMonth().getHeavenStem().toString(), 地支: eightChar.getMonth().getEarthBranch().toString() },
+    日: { 天干: eightChar.getDay().getHeavenStem().toString(), 地支: eightChar.getDay().getEarthBranch().toString() },
+    时: { 天干: eightChar.getHour().getHeavenStem().toString(), 地支: eightChar.getHour().getEarthBranch().toString() },
+  };
+
+  const currentYear = flowYear ?? new Date().getFullYear();
+  const flowYearSixtyCycle = SixtyCycleYear.fromYear(currentYear).getSixtyCycle();
+  const zhuDataWithFlowYear = {
+    ...zhuData,
+    流年: { 天干: flowYearSixtyCycle.getHeavenStem().toString(), 地支: flowYearSixtyCycle.getEarthBranch().toString() },
+  };
+
   return {
     性别: ['女', '男'][gender],
     阳历: lunarHour.getSolarTime().toString(),
@@ -126,11 +201,9 @@ export const buildBazi = (options: { lunarHour: LunarHour; eightCharProviderSect
     身宫: eightChar.getBodySign().toString(),
     神煞: buildGodsObject(eightChar, gender),
     大运: buildDecadeFortuneObject(lunarHour.getSolarTime(), gender, me),
-    刑冲合会: calculateRelation({
-      年: { 天干: eightChar.getYear().getHeavenStem().toString(), 地支: eightChar.getYear().getEarthBranch().toString() },
-      月: { 天干: eightChar.getMonth().getHeavenStem().toString(), 地支: eightChar.getMonth().getEarthBranch().toString() },
-      日: { 天干: eightChar.getDay().getHeavenStem().toString(), 地支: eightChar.getDay().getEarthBranch().toString() },
-      时: { 天干: eightChar.getHour().getHeavenStem().toString(), 地支: eightChar.getHour().getEarthBranch().toString() },
-    }),
+    流年: buildFlowYearObject(currentYear, me),
+    刑冲合会: calculateRelation(zhuDataWithFlowYear),
+    桃花: buildTaoHuaObject(eightChar, flowYearSixtyCycle.getEarthBranch().toString()),
+    日主五行关系: buildDayMasterWuxingRelation(me),
   };
 };
