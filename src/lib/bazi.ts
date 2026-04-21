@@ -216,8 +216,10 @@ export const buildBazi = (options: { lunarHour: LunarHour; eightCharProviderSect
     身宫: eightChar.getBodySign().toString(),
     神煞: buildGodsObject(eightChar, gender),
     大运: buildDecadeFortuneObject(lunarHour.getSolarTime(), gender, me),
-    [`${currentYear}年`]: current,
-    [`${nextYear}年`]: next,
+    流年: current.流年,
+    刑冲合会: current.刑冲合会,
+    桃花: current.桃花,
+    明年: next,
     日主五行关系: buildDayMasterWuxingRelation(me),
   };
 };
