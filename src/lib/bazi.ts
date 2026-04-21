@@ -181,10 +181,23 @@ export const buildBazi = (options: { lunarHour: LunarHour; eightCharProviderSect
     throw new Error(`flowYear 必须是整数年份，收到: ${currentYear}`);
   }
   const flowYearSixtyCycle = SixtyCycleYear.fromYear(currentYear).getSixtyCycle();
-  const zhuDataWithFlowYear = {
-    ...zhuData,
-    流年: { 天干: flowYearSixtyCycle.getHeavenStem().toString(), 地支: flowYearSixtyCycle.getEarthBranch().toString() },
+  const nextYear = currentYear + 1;
+  const nextYearSixtyCycle = SixtyCycleYear.fromYear(nextYear).getSixtyCycle();
+  const buildYearContext = (year: number, sixtyCycle: SixtyCycle) => {
+    const branch = sixtyCycle.getEarthBranch().toString();
+    const stem = sixtyCycle.getHeavenStem().toString();
+    return {
+      流年: buildFlowYearObject(year, sixtyCycle, me),
+      刑冲合会: calculateRelation({
+        ...zhuData,
+        流年: { 天干: stem, 地支: branch },
+      }),
+      桃花: buildTaoHuaObject(eightChar, branch),
+    };
   };
+
+  const current = buildYearContext(currentYear, flowYearSixtyCycle);
+  const next = buildYearContext(nextYear, nextYearSixtyCycle);
 
   return {
     性别: ['女', '男'][gender],
@@ -203,9 +216,10 @@ export const buildBazi = (options: { lunarHour: LunarHour; eightCharProviderSect
     身宫: eightChar.getBodySign().toString(),
     神煞: buildGodsObject(eightChar, gender),
     大运: buildDecadeFortuneObject(lunarHour.getSolarTime(), gender, me),
-    流年: buildFlowYearObject(currentYear, flowYearSixtyCycle, me),
-    刑冲合会: calculateRelation(zhuDataWithFlowYear),
-    桃花: buildTaoHuaObject(eightChar, flowYearSixtyCycle.getEarthBranch().toString()),
+    流年: current.流年,
+    刑冲合会: current.刑冲合会,
+    桃花: current.桃花,
+    明年: next,
     日主五行关系: buildDayMasterWuxingRelation(me),
   };
 };
