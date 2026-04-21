@@ -1,4 +1,5 @@
 import { calculateRelation, getShen, getWuxingRelation } from 'cantian-tymext';
+import { toZonedTime } from 'date-fns-tz';
 import {
   ChildLimit,
   DefaultEightCharProvider,
@@ -177,7 +178,7 @@ export const buildBazi = (options: { lunarHour: LunarHour; eightCharProviderSect
     时: { 天干: eightChar.getHour().getHeavenStem().toString(), 地支: eightChar.getHour().getEarthBranch().toString() },
   };
 
-  const currentYear = flowYear ?? new Date().getFullYear();
+  const currentYear = flowYear ?? toZonedTime(new Date(), '+08:00').getFullYear();
   const flowYearSixtyCycle = SixtyCycleYear.fromYear(currentYear).getSixtyCycle();
   const zhuDataWithFlowYear = {
     ...zhuData,

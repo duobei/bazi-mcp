@@ -4,8 +4,8 @@ import { formatSolarTime, getSolarTime } from './lib/date.js';
 
 export { getChineseCalendar } from './lib/chineseCalendar.js';
 
-export const getBaziDetail = async (data: { lunarDatetime?; solarDatetime?; gender?; eightCharProviderSect? }) => {
-  const { lunarDatetime, solarDatetime, gender, eightCharProviderSect } = data;
+export const getBaziDetail = async (data: { lunarDatetime?; solarDatetime?; gender?; eightCharProviderSect?; flowYear? }) => {
+  const { lunarDatetime, solarDatetime, gender, eightCharProviderSect, flowYear } = data;
   if (!lunarDatetime && !solarDatetime) {
     throw new Error('solarDatetime和lunarDatetime必须传且只传其中一个。');
   }
@@ -24,7 +24,7 @@ export const getBaziDetail = async (data: { lunarDatetime?; solarDatetime?; gend
     const solarTime = getSolarTime(solarDatetime!);
     lunarHour = solarTime.getLunarHour();
   }
-  return buildBazi({ lunarHour, gender: gender as 0 | 1, eightCharProviderSect: eightCharProviderSect as 1 | 2 });
+  return buildBazi({ lunarHour, gender: gender as 0 | 1, eightCharProviderSect: eightCharProviderSect as 1 | 2, flowYear });
 };
 
 export const getSolarTimes = async ({ bazi }) => {

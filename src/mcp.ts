@@ -19,6 +19,10 @@ server.tool(
       .number()
       .default(2)
       .describe('早晚子时配置。传1表示23:00-23:59日干支为明天，传2表示23:00-23:59日干支为当天。'),
+    flowYear: z
+      .number()
+      .optional()
+      .describe('指定流年年份（如2026），用于计算流年干支、流年与原局刑冲合会、桃花命中。不传则默认当前年份（东八区）。'),
   },
   async (data) => {
     const result = await getBaziDetail(data);
