@@ -23,7 +23,10 @@ function parseLunarDatetime(s: string): { year: number; month: number; day: numb
   let hour = 0;
   if (timePart) {
     const h = parseInt(timePart.split(':')[0], 10);
-    if (!isNaN(h)) hour = h;
+    if (isNaN(h) || h < 0 || h > 23) {
+      throw new Error(`农历时间小时无效: ${timePart}，应为 0-23`);
+    }
+    hour = h;
   }
   return { year: y, month: m, day: d, hour };
 }
@@ -53,7 +56,15 @@ export function getZiweiChart(input: ZiweiInput) {
 
   let chart;
   if (solarDatetime) {
-    const date = toDate(solarDatetime);
+    let date;
+    try {
+      date = toDate(solarDatetime);
+    } catch {
+      throw new Error(`公历时间格式无效: ${solarDatetime}，应为ISO格式如 1990-06-15T10:00:00+08:00`);
+    }
+    if (isNaN(date.getTime())) {
+      throw new Error(`公历时间格式无效: ${solarDatetime}，应为ISO格式如 1990-06-15T10:00:00+08:00`);
+    }
     const zoned = toZonedTime(date, '+08:00');
     const dateStr = `${zoned.getFullYear()}-${zoned.getMonth() + 1}-${zoned.getDate()}`;
     const timeIndex = hourToTimeIndex(zoned.getHours());
