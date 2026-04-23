@@ -3,15 +3,52 @@ import { toDate, toZonedTime } from 'date-fns-tz';
 
 /**
  * 小时转 iztro 时辰索引 (0-12)
- * 0=早子(23-1), 1=丑(1-3), 2=寅(3-5), ..., 11=亥(21-23), 12=晚子
+ * 0=早子(00:00-01:00), 1=丑(01-03), 2=寅(03-05), ..., 11=亥(21-23), 12=晚子(23:00-00:00)
  */
 function hourToTimeIndex(hour: number): number {
-  if (hour === 23) return 0;
+  if (hour === 23) return 12;
   return Math.floor((hour + 1) / 2);
 }
 
-export function getZiweiChart(input: { solarDatetime?: string; lunarDatetime?: string; gender: number }) {
-  const { solarDatetime, lunarDatetime, gender } = input;
+/**
+ * 解析农历时间字符串 "YYYY-M-D HH:mm:ss" 为各分量
+ */
+function parseLunarDatetime(s: string): { year: number; month: number; day: number; hour: number } {
+  const [datePart, timePart] = s.trim().split(/\s+/);
+  if (!datePart) throw new Error(`农历时间格式错误: ${s}，应为 YYYY-M-D HH:mm:ss`);
+  const [y, m, d] = datePart.split('-').map(Number);
+  if (!y || !m || !d || m < 1 || m > 12 || d < 1 || d > 30) {
+    throw new Error(`农历日期无效: ${datePart}`);
+  }
+  let hour = 0;
+  if (timePart) {
+    const h = parseInt(timePart.split(':')[0], 10);
+    if (!isNaN(h)) hour = h;
+  }
+  return { year: y, month: m, day: d, hour };
+}
+
+interface ZiweiInput {
+  solarDatetime?: string;
+  lunarDatetime?: string;
+  isLeapMonth?: boolean;
+  gender: number;
+}
+
+export function getZiweiChart(input: ZiweiInput) {
+  const { solarDatetime, lunarDatetime, gender, isLeapMonth } = input;
+
+  // 参数互斥校验
+  if (solarDatetime && lunarDatetime) {
+    throw new Error('solarDatetime和lunarDatetime只能传其中一个。');
+  }
+  if (!solarDatetime && !lunarDatetime) {
+    throw new Error('solarDatetime和lunarDatetime必须传其中一个。');
+  }
+  if (gender !== 0 && gender !== 1) {
+    throw new Error('gender必须为 0（女）或 1（男）。');
+  }
+
   const genderStr = gender === 1 ? '男' : '女';
 
   let chart;
@@ -21,13 +58,11 @@ export function getZiweiChart(input: { solarDatetime?: string; lunarDatetime?: s
     const dateStr = `${zoned.getFullYear()}-${zoned.getMonth() + 1}-${zoned.getDate()}`;
     const timeIndex = hourToTimeIndex(zoned.getHours());
     chart = astro.bySolar(dateStr, timeIndex, genderStr, true, 'zh-CN');
-  } else if (lunarDatetime) {
-    const date = new Date(lunarDatetime);
-    const dateStr = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-    const timeIndex = hourToTimeIndex(date.getHours());
-    chart = astro.byLunar(dateStr, timeIndex, genderStr, true, undefined, 'zh-CN');
   } else {
-    throw new Error('solarDatetime和lunarDatetime必须传且只传其中一个。');
+    const parsed = parseLunarDatetime(lunarDatetime!);
+    const dateStr = `${parsed.year}-${parsed.month}-${parsed.day}`;
+    const timeIndex = hourToTimeIndex(parsed.hour);
+    chart = astro.byLunar(dateStr, timeIndex, genderStr, isLeapMonth ?? false, true, 'zh-CN');
   }
 
   const palaces = chart.palaces.map((p: any) => {

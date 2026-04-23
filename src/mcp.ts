@@ -81,7 +81,8 @@ server.tool(
   {
     solarDatetime: z.string().optional().describe('用ISO时间格式表示的公历时间. 例如：`1990-06-15T10:00:00+08:00`。'),
     lunarDatetime: z.string().optional().describe('农历时间。例如农历1990年5月23日上午10点表示为：`1990-5-23 10:00:00`。'),
-    gender: z.number().describe('传0表示女性，传1表示男性。'),
+    isLeapMonth: z.boolean().optional().describe('仅农历时有效。是否闰月，默认false。只有用户明确说是闰月时才传true。'),
+    gender: z.union([z.literal(0), z.literal(1)]).describe('传0表示女性，传1表示男性。'),
   },
   async (data) => {
     const result = getZiweiChart(data);
