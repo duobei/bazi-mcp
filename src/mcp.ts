@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import z from 'zod';
-import { getBaziDetail, getChineseCalendar, getSolarTimes } from './index.js';
+import { getBaziDetail, getChineseCalendar, getSolarTimes, getZiweiChart } from './index.js';
 
 const server = new McpServer({
   name: 'Bazi',
@@ -64,6 +64,27 @@ server.tool(
   },
   async ({ solarDatetime }) => {
     const result = getChineseCalendar(solarDatetime);
+    return {
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result),
+        },
+      ],
+    };
+  },
+);
+
+server.tool(
+  'getZiweiChart',
+  '根据出生时间和性别排紫微斗数命盘。返回十二宫、主星（含亮度）、辅星、四化飞星、大限等完整命盘数据。solarDatetime和lunarDatetime必须传且只传其中一个。',
+  {
+    solarDatetime: z.string().optional().describe('用ISO时间格式表示的公历时间. 例如：`1990-06-15T10:00:00+08:00`。'),
+    lunarDatetime: z.string().optional().describe('农历时间。例如农历1990年5月23日上午10点表示为：`1990-5-23 10:00:00`。'),
+    gender: z.number().describe('传0表示女性，传1表示男性。'),
+  },
+  async (data) => {
+    const result = getZiweiChart(data);
     return {
       content: [
         {
