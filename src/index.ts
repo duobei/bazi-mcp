@@ -7,8 +7,11 @@ export { getZiweiChart } from './lib/ziwei.js';
 
 export const getBaziDetail = async (data: { lunarDatetime?; solarDatetime?; gender?; eightCharProviderSect?; flowYear? }) => {
   const { lunarDatetime, solarDatetime, gender, eightCharProviderSect, flowYear } = data;
+  if (lunarDatetime && solarDatetime) {
+    throw new Error('solarDatetime和lunarDatetime只能传其中一个。');
+  }
   if (!lunarDatetime && !solarDatetime) {
-    throw new Error('solarDatetime和lunarDatetime必须传且只传其中一个。');
+    throw new Error('solarDatetime和lunarDatetime必须传其中一个。');
   }
   let lunarHour: LunarHour;
   if (lunarDatetime) {
