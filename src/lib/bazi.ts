@@ -159,9 +159,9 @@ const buildDayMasterWuxingRelation = (me: HeavenStem) => {
   return result;
 };
 
-export const buildBazi = (options: { lunarHour: LunarHour; eightCharProviderSect?: 1 | 2; gender?: Gender; flowYear?: number }) => {
-  const { lunarHour, eightCharProviderSect = 2, gender = 1, flowYear } = options;
-  if (eightCharProviderSect === 2) {
+export const buildBazi = (options: { lunarHour: LunarHour; baziProviderSect?: 1 | 2; gender?: Gender; flowYear?: number }) => {
+  const { lunarHour, baziProviderSect = 2, gender = 1, flowYear } = options;
+  if (baziProviderSect === 2) {
     LunarHour.provider = eightCharProvider2;
   } else {
     LunarHour.provider = eightCharProvider1;

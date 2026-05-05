@@ -15,7 +15,7 @@ server.tool(
     lunarDatetime: z.string().optional().describe('农历时间。例如农历2000年5月初五中午12点整表示为：`2000-5-5 12:00:00`。'),
 
     gender: z.number().describe('传0表示女性，传1表示男性。'),
-    eightCharProviderSect: z
+    baziProviderSect: z
       .number()
       .default(2)
       .describe('早晚子时配置。传1表示23:00-23:59日干支为明天，传2表示23:00-23:59日干支为当天。'),
