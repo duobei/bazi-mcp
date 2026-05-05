@@ -1,6 +1,14 @@
 import { astro } from 'iztro';
 import { toDate, toZonedTime } from 'date-fns-tz';
 
+astro.config({
+  yearDivide: 'normal',
+  horoscopeDivide: 'normal',
+  ageDivide: 'normal',
+  dayDivide: 'forward',
+  algorithm: 'zhongzhou',
+});
+
 /**
  * 小时转 iztro 时辰索引 (0-12)
  * 0=早子(00:00-01:00), 1=丑(01-03), 2=寅(03-05), ..., 11=亥(21-23), 12=晚子(23:00-00:00)
